@@ -412,6 +412,7 @@ func (ms MigrationSet) ExecMax(db *sql.DB, dialect string, m MigrationSource, di
 
 		switch dir {
 		case Up:
+			start := time.Now()
 			ui.Warn("Migrating " + migration.Id)
 			err = executor.Insert(&MigrationRecord{
 				Id:        migration.Id,
@@ -424,8 +425,9 @@ func (ms MigrationSet) ExecMax(db *sql.DB, dialect string, m MigrationSource, di
 				ui.Error(fmt.Sprintf("Unable to migrate %s, error: %s", migration.Id, err.Error()))
 				return applied, newTxError(migration, err)
 			}
-			ui.Output("Migrated " + migration.Id)
+			ui.Output("Migrated " + migration.Id + "; Time taken: " + time.Since(start).String())
 		case Down:
+			start := time.Now()
 			ui.Warn("Rolling back " + migration.Id)
 			_, err := executor.Delete(&MigrationRecord{
 				Id: migration.Id,
@@ -437,7 +439,7 @@ func (ms MigrationSet) ExecMax(db *sql.DB, dialect string, m MigrationSource, di
 				ui.Error(fmt.Sprintf("Unable to rollback %s, error: %s", migration.Id, err.Error()))
 				return applied, newTxError(migration, err)
 			}
-			ui.Output("Rollback Successful " + migration.Id)
+			ui.Output("Rollback Successful " + migration.Id + "; Time taken: " + time.Since(start).String())
 		default:
 			panic("Not possible")
 		}
