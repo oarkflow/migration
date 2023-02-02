@@ -1,15 +1,12 @@
 package migrations
 
 import (
-	"database/sql"
 	"flag"
-	"fmt"
 	"strings"
 )
 
 type SkipCommand struct {
-	dialect string
-	db      *sql.DB
+	migrate *Migrate
 }
 
 func (c *SkipCommand) Help() string {
@@ -44,33 +41,11 @@ func (c *SkipCommand) Run(args []string) int {
 		return 1
 	}
 
-	err := SkipMigrations(c.dialect, c.db, Up, dryrun, limit)
+	err := c.migrate.SkipMigration(c.migrate.Dialect, c.migrate.DB, Up, dryrun, limit)
 	if err != nil {
 		ui.Error(err.Error())
 		return 1
 	}
 
 	return 0
-}
-
-func SkipMigrations(dialect string, curBD *sql.DB, dir MigrationDirection, dryrun bool, limit int) error {
-	source := FileMigrationSource{
-		Dir: DefaultConfig.Dir,
-	}
-
-	n, err := SkipMax(curBD, dialect, source, dir, limit)
-	if err != nil {
-		return fmt.Errorf("Migration failed: %s", err)
-	}
-
-	switch n {
-	case 0:
-		ui.Output("All migrations have already been applied")
-	case 1:
-		ui.Output("Skipped 1 migration")
-	default:
-		ui.Output(fmt.Sprintf("Skipped %d migrations", n))
-	}
-
-	return nil
 }

@@ -1,19 +1,13 @@
 package migrations
 
 import (
-	"database/sql"
 	"flag"
-	"fmt"
-	"os"
 	"strings"
 	"time"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 type StatusCommand struct {
-	dialect string
-	db      *sql.DB
+	migrate *Migrate
 }
 
 func (c *StatusCommand) Help() string {
@@ -42,60 +36,10 @@ func (c *StatusCommand) Run(args []string) int {
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
-	source := FileMigrationSource{
-		Dir: DefaultConfig.Dir,
-	}
-	migrations, err := source.FindMigrations()
+	err := Status(c.migrate.Dir, c.migrate.Dialect, c.migrate.DB)
 	if err != nil {
-		ui.Error(err.Error())
 		return 1
 	}
-
-	records, err := GetMigrationRecords(c.db, c.dialect)
-	if err != nil {
-		ui.Error(err.Error())
-		return 1
-	}
-
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Migration", "Applied"})
-	table.SetColWidth(60)
-
-	rows := make(map[string]*statusRow)
-
-	for _, m := range migrations {
-		rows[m.Id] = &statusRow{
-			Id:       m.Id,
-			Migrated: false,
-		}
-	}
-
-	for _, r := range records {
-		if rows[r.Id] == nil {
-			ui.Warn(fmt.Sprintf("Could not find migration file: %v", r.Id))
-			continue
-		}
-
-		rows[r.Id].Migrated = true
-		rows[r.Id].AppliedAt = r.AppliedAt
-	}
-
-	for _, m := range migrations {
-		if rows[m.Id] != nil && rows[m.Id].Migrated {
-			table.Append([]string{
-				m.Id,
-				rows[m.Id].AppliedAt.String(),
-			})
-		} else {
-			table.Append([]string{
-				m.Id,
-				"no",
-			})
-		}
-	}
-
-	table.Render()
-
 	return 0
 }
 

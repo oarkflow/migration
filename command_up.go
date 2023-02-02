@@ -1,14 +1,12 @@
 package migrations
 
 import (
-	"database/sql"
 	"flag"
 	"strings"
 )
 
 type UpCommand struct {
-	dialect string
-	db      *sql.DB
+	migrate *Migrate
 }
 
 func (c *UpCommand) Help() string {
@@ -45,7 +43,7 @@ func (c *UpCommand) Run(args []string) int {
 		return 1
 	}
 
-	err := ApplyMigrations(c.dialect, c.db, Up, dryrun, limit)
+	err := c.migrate.Apply(Up, dryrun, limit)
 	if err != nil {
 		ui.Error(err.Error())
 		return 1

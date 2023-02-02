@@ -1,15 +1,12 @@
 package migrations
 
 import (
-	"database/sql"
 	"flag"
-	"fmt"
 	"strings"
 )
 
 type RedoCommand struct {
-	dialect string
-	db      *sql.DB
+	migrate *Migrate
 }
 
 func (c *RedoCommand) Help() string {
@@ -42,39 +39,9 @@ func (c *RedoCommand) Run(args []string) int {
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
-	curBD := c.db
-
-	source := FileMigrationSource{
-		Dir: DefaultConfig.Dir,
-	}
-
-	migrations, _, err := PlanMigration(curBD, c.dialect, source, Down, 1)
+	err := Redo(c.migrate.Dir, c.migrate.Dialect, c.migrate.DB, dryrun)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Migration (redo) failed: %v", err))
 		return 1
-	} else if len(migrations) == 0 {
-		ui.Output("Nothing to do!")
-		return 0
 	}
-
-	if dryrun {
-		PrintMigration(migrations[0], Down)
-		PrintMigration(migrations[0], Up)
-	} else {
-		_, err := ExecMax(curBD, c.dialect, source, Down, 1)
-		if err != nil {
-			ui.Error(fmt.Sprintf("Migration (down) failed: %s", err))
-			return 1
-		}
-
-		_, err = ExecMax(curBD, c.dialect, source, Up, 1)
-		if err != nil {
-			ui.Error(fmt.Sprintf("Migration (up) failed: %s", err))
-			return 1
-		}
-
-		ui.Output(fmt.Sprintf("Reapplied migration %s.", migrations[0].Id))
-	}
-
 	return 0
 }
