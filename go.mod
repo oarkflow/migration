@@ -1,4 +1,4 @@
-module github.com/sujit-baniya/migration
+module github.com/oarkflow/migration
 
 go 1.19
 
