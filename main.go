@@ -13,7 +13,13 @@ import (
 	"github.com/mitchellh/cli"
 )
 
-var ui cli.Ui
+type CallbackHandler func(MigrationDirection, string)
+
+var (
+	ui       cli.Ui
+	Cmd      = "cli"
+	Callback CallbackHandler
+)
 
 type Commands struct {
 	Up     *UpCommand

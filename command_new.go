@@ -3,6 +3,7 @@ package migration
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"strings"
 	"text/template"
 )
@@ -24,7 +25,7 @@ type NewCommand struct {
 
 func (c *NewCommand) Help() string {
 	helpText := `
-Usage: verify-rest new [options] name
+Usage: %s new [options] name
 
   Create a new a database migration.
 
@@ -34,7 +35,7 @@ Options:
   -env="development"     Environment.
   name                   The name of the migration
 `
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, Cmd))
 }
 
 func (c *NewCommand) Synopsis() string {

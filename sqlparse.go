@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-
 	"strings"
 )
 
@@ -34,12 +33,10 @@ var (
 
 func errNoTerminator() error {
 	if len(LineSeparator) == 0 {
-		return errors.New(`ERROR: The last statement must be ended by a semicolon or '-- +migrate StatementEnd' marker.
-			See https://github.com/rubenv/verify-rest for details.`)
+		return errors.New(`ERROR: The last statement must be ended by a semicolon or '-- +migrate StatementEnd' marker.`)
 	}
 
-	return errors.New(fmt.Sprintf(`ERROR: The last statement must be ended by a semicolon, a line whose contents are %q, or '-- +migrate StatementEnd' marker.
-			See https://github.com/rubenv/verify-rest for details.`, LineSeparator))
+	return errors.New(fmt.Sprintf(`ERROR: The last statement must be ended by a semicolon, a line whose contents are %q, or '-- +migrate StatementEnd' marker.`, LineSeparator))
 }
 
 // Checks the line to see if the line has a statement-ending semicolon
@@ -88,7 +85,7 @@ func parseCommand(line string) (*migrateCommand, error) {
 	cmd := &migrateCommand{}
 
 	if !strings.HasPrefix(line, sqlCmdPrefix) {
-		return nil, errors.New("ERROR: not a verify-rest command")
+		return nil, errors.New("ERROR: not a command")
 	}
 
 	fields := strings.Fields(line[len(sqlCmdPrefix):])
@@ -220,8 +217,7 @@ func Parse(r io.ReadSeeker) (*ParsedMigration, error) {
 	}
 
 	if currentDirection == directionNone {
-		return nil, errors.New(`ERROR: no Up/Down annotations found, so no statements were executed.
-			See https://github.com/rubenv/verify-rest for details.`)
+		return nil, errors.New(`ERROR: no Up/Down annotations found, so no statements were executed.`)
 	}
 
 	// allow comment without sql instruction. Example:

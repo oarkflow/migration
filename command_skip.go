@@ -2,6 +2,7 @@ package migration
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 )
 
@@ -11,7 +12,7 @@ type SkipCommand struct {
 
 func (c *SkipCommand) Help() string {
 	helpText := `
-Usage: verify-rest skip [options] ...
+Usage: %s skip [options] ...
 
   Set the database level to the most recent version available, without actually running the migrations.
 
@@ -22,7 +23,7 @@ Options:
   -limit=0               Limit the number of migrations (0 = unlimited).
 
 `
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, Cmd))
 }
 
 func (c *SkipCommand) Synopsis() string {

@@ -2,6 +2,7 @@ package migration
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 )
 
@@ -11,7 +12,7 @@ type RedoCommand struct {
 
 func (c *RedoCommand) Help() string {
 	helpText := `
-Usage: verify-rest redo [options] ...
+Usage: %s redo [options] ...
 
   Reapply the last migration.
 
@@ -22,7 +23,7 @@ Options:
   -dryrun                Don't apply migrations, just print them.
 
 `
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, Cmd))
 }
 
 func (c *RedoCommand) Synopsis() string {

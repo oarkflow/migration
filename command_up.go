@@ -2,6 +2,7 @@ package migration
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 )
 
@@ -11,7 +12,7 @@ type UpCommand struct {
 
 func (c *UpCommand) Help() string {
 	helpText := `
-Usage: verify-rest up [options] ...
+Usage: %s up [options] ...
 
   Migrates the database to the most recent version available.
 
@@ -23,7 +24,7 @@ Options:
   -dryrun                Don't apply migrations, just print them.
 
 `
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, Cmd))
 }
 
 func (c *UpCommand) Synopsis() string {

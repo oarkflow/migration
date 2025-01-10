@@ -2,6 +2,7 @@ package migration
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 )
 
@@ -11,7 +12,7 @@ type DownCommand struct {
 
 func (c *DownCommand) Help() string {
 	helpText := `
-Usage: verify-rest down [options] ...
+Usage: %s down [options] ...
 
   Undo a database migration.
 
@@ -23,7 +24,7 @@ Options:
   -dryrun                Don't apply migrations, just print them.
 
 `
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, Cmd))
 }
 
 func (c *DownCommand) Synopsis() string {

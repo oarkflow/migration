@@ -2,6 +2,7 @@ package migration
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -12,7 +13,7 @@ type StatusCommand struct {
 
 func (c *StatusCommand) Help() string {
 	helpText := `
-Usage: verify-rest status [options] ...
+Usage: %s status [options] ...
 
   Show migration status.
 
@@ -22,7 +23,7 @@ Options:
   -env="development"     Environment.
 
 `
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, Cmd))
 }
 
 func (c *StatusCommand) Synopsis() string {

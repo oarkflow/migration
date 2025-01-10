@@ -408,6 +408,9 @@ func (ms MigrationSet) ExecMax(db *sql.DB, dialect string, m MigrationSource, di
 
 				return applied, newTxError(migration, err)
 			}
+			if Callback != nil {
+				Callback(dir, stmt)
+			}
 		}
 
 		switch dir {
@@ -690,7 +693,7 @@ Check https://github.com/go-sql-driver/mysql#parsetime for more info.`)
 	// Create migration database map
 	dbMap := &gorp.DbMap{Db: db, Dialect: d}
 	table := dbMap.AddTableWithNameAndSchema(MigrationRecord{}, ms.SchemaName, ms.getTableName()).SetKeys(false, "Id")
-	//dbMap.TraceOn("", log.New(os.Stdout, "migrate: ", log.Lmicroseconds))
+	// dbMap.TraceOn("", log.New(os.Stdout, "migrate: ", log.Lmicroseconds))
 
 	if dialect == "oci8" || dialect == "godror" {
 		table.ColMap("Id").SetMaxSize(4000)
