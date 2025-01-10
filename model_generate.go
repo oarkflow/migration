@@ -16,7 +16,7 @@ var (
 	columnRegex      = regexp.MustCompile(`(\w+)\s+([^\s,]+(?:\([^\)]+\))?)(.*)`)
 )
 
-func GenerateGoStruct(sql, pkgName, dirName, fileName string) string {
+func GenerateGoStruct(sql, pkgName, dirName, fileName string, generateFile bool) string {
 	if pkgName == "" {
 		pkgName = "models"
 	}
@@ -28,18 +28,21 @@ func GenerateGoStruct(sql, pkgName, dirName, fileName string) string {
 	if createTableStatement == "" {
 		return "No CREATE TABLE statement found in -- +migrate Up section."
 	}
-	structCode := parseCreateTable(createTableStatement+";", pkgName)
-	if fileName != "" {
-		if dirName != "" {
-			if err := os.MkdirAll(dirName, os.ModePerm); err != nil {
-				return fmt.Sprintf("Failed to create directory '%s': %v", dirName, err)
-			}
+	structCode, tableName := parseCreateTable(createTableStatement+";", pkgName)
+	if !generateFile {
+		return structCode
+	}
+	if fileName == "" {
+		fileName = tableName + ".go"
+	}
+	if dirName != "" {
+		if err := os.MkdirAll(dirName, os.ModePerm); err != nil {
+			return fmt.Sprintf("Failed to create directory '%s': %v", dirName, err)
 		}
-		filePath := filepath.Join(dirName, fileName)
-		if err := os.WriteFile(filePath, []byte(structCode), 0644); err != nil {
-			return fmt.Sprintf("Failed to write to file '%s': %v", filePath, err)
-		}
-		return fmt.Sprintf("Go struct generated and written to file: %s", filePath)
+	}
+	filePath := filepath.Join(dirName, fileName)
+	if err := os.WriteFile(filePath, []byte(structCode), 0644); err != nil {
+		return fmt.Sprintf("Failed to write to file '%s': %v", filePath, err)
 	}
 	return structCode
 }
@@ -62,10 +65,10 @@ func extractCreateTable(upSection string) string {
 	return ""
 }
 
-func parseCreateTable(createTableStatement, pkgName string) string {
+func parseCreateTable(createTableStatement, pkgName string) (string, string) {
 	matches := createTableRegex.FindStringSubmatch(createTableStatement)
 	if matches == nil {
-		return "Invalid CREATE TABLE statement."
+		return "Invalid CREATE TABLE statement.", ""
 	}
 
 	tableName := matches[1]
@@ -121,7 +124,7 @@ func (u *%s) ID() string {
 }
 `, structName, tableName, structName, toCamelCase(primaryKey))
 
-	return st
+	return st, strings.ToLower(tableName)
 }
 
 func mapSQLTypeToGoType(sqlType string) (string, bool) {
