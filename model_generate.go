@@ -22,7 +22,7 @@ func GenerateGoStruct(sql, pkgName, dirName, fileName string, generateFile bool)
 	}
 	upSection := extractUpSection(sql)
 	if upSection == "" {
-		return "No -- +migrate Up section found."
+		upSection = sql
 	}
 	createTableStatement := extractCreateTable(upSection)
 	if createTableStatement == "" {
