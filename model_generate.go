@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/oarkflow/migration/pluralize"
@@ -70,12 +71,11 @@ func parseCreateTable(createTableStatement, pkgName string) (string, string) {
 	if matches == nil {
 		return "Invalid CREATE TABLE statement.", ""
 	}
-
 	tableName := matches[1]
 	columns := matches[2]
 	columnLines := strings.Split(columns, ",")
 	var fields []string
-	var primaryKey string
+	var primaryKeys []string
 	var timeCol bool
 	for _, columnLine := range columnLines {
 		columnLine = strings.TrimSpace(columnLine)
@@ -83,46 +83,49 @@ func parseCreateTable(createTableStatement, pkgName string) (string, string) {
 		if colMatches == nil {
 			continue
 		}
-
 		columnName := colMatches[1]
 		sqlType := colMatches[2]
 		columnModifiers := strings.ToLower(colMatches[3])
 		goType, hasTime := mapSQLTypeToGoType(sqlType)
-		timeCol = hasTime
-		if primaryKey == "" && (strings.Contains(columnModifiers, "primary key") ||
-			strings.Contains(sqlType, "serial") || strings.Contains(sqlType, "identity") ||
-			strings.Contains(columnModifiers, "unique") && strings.Contains(columnModifiers, "not null")) {
-			primaryKey = columnName
+		timeCol = timeCol || hasTime
+		if strings.Contains(columnModifiers, "primary key") {
+			primaryKeys = append(primaryKeys, columnName)
 		}
-
+		if strings.Contains(sqlType, "serial") || strings.Contains(sqlType, "identity") {
+			primaryKeys = append(primaryKeys, columnName)
+		}
+		if strings.Contains(columnModifiers, "nextval(") {
+			if strings.Contains(columnModifiers, "primary key") {
+				primaryKeys = append(primaryKeys, columnName)
+			}
+		}
 		fields = append(fields, fmt.Sprintf("\t%s %s `json:\"%s\"`", toCamelCase(columnName), goType, columnName))
 	}
-	if primaryKey == "" {
-		primaryKey = "id"
+
+	if len(primaryKeys) == 0 {
+		primaryKeys = append(primaryKeys, "id") // Default to "id" if no primary key is found
 	}
+	primaryKey := slices.Compact(primaryKeys)[0]
 	structName := toCamelCase(pluralize.NewClient().Singular(tableName))
 	st := fmt.Sprintf("package %s \n\n", pkgName)
 	st += `import (
 	"time"
 	"fmt"
 )`
-	if timeCol {
-	} else {
-		st += `import (
-	"fmt"
-)`
-	}
 	st += fmt.Sprintf("\n\ntype %s struct {\n%s\n}\n", structName, strings.Join(fields, "\n"))
-	// Add table name and ID methods
 	st += fmt.Sprintf(`
 func (u *%s) TableName() string {
 	return "%s"
 }
 
 func (u *%s) ID() string {
-	return fmt.Sprintf("%%v",u.%s)
+	return fmt.Sprintf("%%v", u.%s)
 }
-`, structName, tableName, structName, toCamelCase(primaryKey))
+
+func (u *%s) PrimaryKey() string {
+	return "%s"
+}
+`, structName, tableName, structName, toCamelCase(primaryKeys[0]), structName, primaryKey)
 
 	return st, strings.ToLower(tableName)
 }
