@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"text/template"
 	"time"
@@ -238,11 +239,17 @@ func (m *Migrate) Create(name string) error {
 	return nil
 }
 
+var allowedObj = []string{"table", "view"}
+
 func (m *Migrate) GetQuery(migrationName string) string {
 	nameParts := strings.Split(migrationName, `_`)
 	upQuery := ""
 	downQuery := ""
-	if nameParts[len(nameParts)-1] == "table" {
+	defObject := "table"
+	if slices.Contains(allowedObj, nameParts[len(nameParts)-1]) {
+		defObject = nameParts[len(nameParts)-1]
+	}
+	if defObject == "table" {
 		switch nameParts[0] {
 		case "create":
 			if m.Dialect == "postgresql" {
@@ -251,9 +258,10 @@ func (m *Migrate) GetQuery(migrationName string) string {
 				upQuery = createSequence + "CREATE TABLE IF NOT EXISTS " + tableName + `
 (
 	id int8 NOT NULL DEFAULT nextval('` + tableName + `_id_seq'::regclass) PRIMARY KEY, 
+	status varchar(20) DEFAULT 'ACTIVE',
 	is_active bool default false,
-	created_at timestamptz,
-	updated_at timestamptz,
+	created_at timestamptz DEFAULT NOW(),
+	updated_at timestamptz DEFAULT NOW(),
 	deleted_at timestamptz
 )` + ";"
 				dropSequenceQuery := "DROP SEQUENCE IF EXISTS " + tableName + "_seq;\n"
@@ -263,6 +271,7 @@ func (m *Migrate) GetQuery(migrationName string) string {
 				upQuery = "CREATE TABLE IF NOT EXISTS " + tableName + `
 (
 	id BIGINT AUTO_INCREMENT PRIMARY KEY, 
+	status varchar(20) DEFAULT 'ACTIVE',
 	is_active bool default false,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at DATETIME Null DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -280,9 +289,10 @@ func (m *Migrate) GetQuery(migrationName string) string {
 				downQuery = createSequence + "CREATE TABLE IF NOT EXISTS " + tableName + `
 (
 	id int8 NOT NULL DEFAULT nextval('` + tableName + `_id_seq'::regclass) PRIMARY KEY, 
+	status varchar(20) DEFAULT 'ACTIVE',
 	is_active bool default false,
-	created_at timestamptz,
-	updated_at timestamptz,
+	created_at timestamptz DEFAULT NOW(),
+	updated_at timestamptz DEFAULT NOW(),
 	deleted_at timestamptz
 )` + ";"
 			} else if m.Dialect == "mysql" {
@@ -291,6 +301,7 @@ func (m *Migrate) GetQuery(migrationName string) string {
 				downQuery = "CREATE TABLE IF NOT EXISTS " + tableName + `
 (
 	id BIGINT AUTO_INCREMENT PRIMARY KEY, 
+	status varchar(20) DEFAULT 'ACTIVE',
 	is_active bool default false,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at DATETIME Null DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
