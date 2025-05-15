@@ -3,8 +3,9 @@ package migration
 import (
 	"database/sql"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
 	"os"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 func Status(dir, dialect string, db *sql.DB) error {
@@ -24,8 +25,7 @@ func Status(dir, dialect string, db *sql.DB) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Migration", "Applied"})
-	table.SetColWidth(60)
+	table.Header([]string{"Migration", "Applied"})
 
 	rows := make(map[string]*statusRow)
 
