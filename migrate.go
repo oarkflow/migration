@@ -244,25 +244,37 @@ func (f FileMigrationSource) FindMigrations() ([]*Migration, error) {
 func findMigrations(dir http.FileSystem, root string) ([]*Migration, error) {
 	migrations := make([]*Migration, 0)
 
-	file, err := dir.Open(root)
-	if err != nil {
-		return nil, err
-	}
-
-	files, err := file.Readdir(0)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, info := range files {
-		if strings.HasSuffix(info.Name(), ".sql") {
-			migration, err := migrationFromFile(dir, root, info)
-			if err != nil {
-				return nil, err
-			}
-
-			migrations = append(migrations, migration)
+	var walk func(string) error
+	walk = func(current string) error {
+		file, err := dir.Open(current)
+		if err != nil {
+			return err
 		}
+		files, err := file.Readdir(0)
+		_ = file.Close()
+		if err != nil {
+			return err
+		}
+		for _, info := range files {
+			if info.IsDir() {
+				// Recursively walk sub-directories
+				subDir := path.Join(current, info.Name())
+				if err := walk(subDir); err != nil {
+					return err
+				}
+			} else if strings.HasSuffix(info.Name(), ".sql") {
+				migration, err := migrationFromFile(dir, current, info)
+				if err != nil {
+					return err
+				}
+				migrations = append(migrations, migration)
+			}
+		}
+		return nil
+	}
+
+	if err := walk(root); err != nil {
+		return nil, err
 	}
 
 	// Make sure migrations are sorted

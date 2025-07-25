@@ -222,10 +222,31 @@ func (m *Migrate) Create(name string) error {
 	if query != "" {
 		tpl = template.Must(template.New("new_migration").Parse(query))
 	}
-	fileName := fmt.Sprintf("%s-%s.sql", time.Now().Format("20060102150405"), strings.TrimSpace(name))
-	pathName := path.Join(m.Dir, fileName)
-	f, err := os.Create(pathName)
 
+	var fileName string
+	var pathName string
+
+	if strings.Contains(name, "/") {
+		// Support sub-directory, e.g., "pipelines/create_pipelines_table.sql"
+		subPath := path.Dir(name)
+		fullDir := path.Join(m.Dir, subPath)
+		if err := os.MkdirAll(fullDir, os.ModePerm); err != nil {
+			return err
+		}
+		baseName := path.Base(name)
+		// If baseName ends with .sql, use as is, else add timestamp
+		if strings.HasSuffix(baseName, ".sql") {
+			fileName = baseName
+		} else {
+			fileName = fmt.Sprintf("%s-%s.sql", time.Now().Format("20060102150405"), baseName)
+		}
+		pathName = path.Join(fullDir, fileName)
+	} else {
+		fileName = fmt.Sprintf("%s-%s.sql", time.Now().Format("20060102150405"), strings.TrimSpace(name))
+		pathName = path.Join(m.Dir, fileName)
+	}
+
+	f, err := os.Create(pathName)
 	if err != nil {
 		return err
 	}
