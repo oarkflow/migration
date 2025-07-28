@@ -218,7 +218,13 @@ func (m *Migrate) Create(name string) error {
 	if _, err := os.Stat(m.Dir); os.IsNotExist(err) {
 		return err
 	}
-	query := m.GetQuery(name)
+	var query string
+	if strings.Contains(name, "/") {
+		fileName := path.Base(name)
+		query = m.GetQuery(fileName)
+	} else {
+		query = m.GetQuery(name)
+	}
 	if query != "" {
 		tpl = template.Must(template.New("new_migration").Parse(query))
 	}
